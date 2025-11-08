@@ -4,6 +4,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Callable, Protocol
+
+
+class ProgressReporter(Protocol):
+    """Callable interface used to surface progress updates to the caller."""
+
+    def __call__(self, message: str) -> None:
+        ...
 
 
 class BaseASRProvider(ABC):
@@ -15,7 +23,7 @@ class BaseASRProvider(ABC):
         self.model_id = model_id
 
     @abstractmethod
-    def load(self) -> None:
+    def load(self, report_progress: ProgressReporter | None = None) -> None:
         """Ensure any heavy resources are ready for inference."""
 
     @abstractmethod

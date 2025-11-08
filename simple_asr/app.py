@@ -66,7 +66,11 @@ class SimpleASRApp:
 
         LOGGER.info("Loading provider '%s'", self.provider.name)
         print(f"Loading ASR model for provider '{self.provider.name}'. This may take a moment...")
-        self.provider.load()
+
+        def report_progress(message: str) -> None:
+            print(f"  -> {message}")
+
+        self.provider.load(report_progress=report_progress)
         print("Model loaded. Ready when you are!")
 
         listener = HotkeyTranscriber(
