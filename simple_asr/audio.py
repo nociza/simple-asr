@@ -28,23 +28,26 @@ class AudioRecorder:
     def start(self) -> None:
         """Begin capturing audio from the default input device."""
 
-        if self._stream is not None:
-            LOGGER.debug("Recorder already running; ignoring start request.")
-            return
+        if self._stream is None:
+            self._stream = self._create_stream()
+        else:
+            if self._stream.active:
+                LOGGER.debug("Recorder already running; ignoring start request.")
+                return
 
-        self._frames = []
+        with self._frames_lock:
+            self._frames = []
 
         try:
-            self._stream = sd.InputStream(
-                samplerate=self.sample_rate,
-                channels=self.channels,
-                dtype="float32",
-                callback=self._callback,
-            )
             self._stream.start()
             LOGGER.debug("Audio stream started.")
         except Exception:
-            self._stream = None
+            try:
+                self._stream.close()
+            except Exception:  # pragma: no cover - best effort cleanup
+                LOGGER.exception("Failed to close audio stream after start error.")
+            finally:
+                self._stream = None
             LOGGER.exception("Failed to start audio input stream.")
             raise
 
@@ -55,12 +58,12 @@ class AudioRecorder:
             LOGGER.debug("Recorder not running; ignoring stop request.")
             return None
 
-        try:
-            self._stream.stop()
-            self._stream.close()
-            LOGGER.debug("Audio stream stopped.")
-        finally:
-            self._stream = None
+        if self._stream.active:
+            try:
+                self._stream.stop()
+                LOGGER.debug("Audio stream stopped.")
+            except Exception:
+                LOGGER.exception("Failed to stop audio stream.")
 
         with self._frames_lock:
             if not self._frames:
@@ -97,7 +100,18 @@ class AudioRecorder:
             self._frames.append(indata.copy())
 
     def _write_temp_wav(self, audio: np.ndarray) -> Path:
-        with NamedTemporaryFile(prefix="simple-asr-", suffix=".wav", delete=False) as tmp:
+        with NamedTemporaryFile(
+            prefix="simple-asr-", suffix=".wav", delete=False
+        ) as tmp:
             sf.write(tmp.name, audio, self.sample_rate)
             return Path(tmp.name)
 
+    def _create_stream(self) -> sd.InputStream:
+        return sd.InputStream(
+            samplerate=self.sample_rate,
+            channels=self.channels,
+            dtype="float32",
+            callback=self._callback,
+            blocksize=0,
+            latency="low",
+        )

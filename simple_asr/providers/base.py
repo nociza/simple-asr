@@ -22,3 +22,13 @@ class BaseASRProvider(ABC):
     def transcribe(self, audio_path: Path) -> str:
         """Return the transcription for the given audio file."""
 
+    def add_vocabulary(self, phrases: list[str]) -> None:
+        """Extend the provider with custom bias phrases.
+
+        Implementations can override or extend this to hook into model-specific
+        vocabulary or prompt modifiers.
+        """
+
+    def clear_vocabulary(self) -> None:
+        """Remove any custom vocabulary previously registered."""
+
