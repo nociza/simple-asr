@@ -1,6 +1,6 @@
 ## Simple ASR
 
-A very, very simple locally hosted press-to-talk speech transcription helper that types wherever your cursor is focused and lets you switch between open-source ASR models (default: NVIDIA's Canary on Hugging Face).
+A very, very simple locally hosted press-to-talk speech transcription helper that types wherever your cursor is focused and lets you switch between open-source ASR models (default: NVIDIA's Canary on Hugging Face). Minimal alternative to wispr flow. Feel free to contribute by opening a PR. 
 
 ### Prerequisites
 
